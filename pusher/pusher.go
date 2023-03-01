@@ -25,15 +25,38 @@ type Interaction struct {
 }
 
 type Config struct {
-	ELKHost     string `yaml:"elk_host"`
-	ProjectName string `yaml:"project_name,omitempty"`
-	Username    string `yaml:"username,omitempty"`
-	Password    string `yaml:"password,omitempty"`
+	ELKHost  string `yaml:"elk_host"`
+	Username string `yaml:"username,omitempty"`
+	Password string `yaml:"password,omitempty"`
 }
 
-func initialize(project string) {
+type Pusher struct {
+	options *Options
+}
 
-	appConfig = ReadConfigYaml(project)
+func NewPusher(options *Options) (*Pusher, error) {
+	pusher := &Pusher{options: options}
+	initialize(options.ConfigFile)
+	return pusher, nil
+}
+
+func (p *Pusher) Push() error {
+	if strings.ToLower(p.options.Type) == "json" {
+		log.Infof("Pushing JSONL file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
+		SaveAnyJSONLToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Verbose)
+	} else if strings.ToLower(p.options.Type) == "raw" {
+		log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
+		SaveInteractionToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
+	} else {
+		log.Infof("Pushing other file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
+		SaveAnyToElk(p.options.InputFile, p.options.Index, p.options.Project)
+	}
+	log.Infof("elasticPusher finished")
+	return nil
+}
+
+func initialize(configLocation string) {
+	appConfig = loadConfigFrom(configLocation)
 	if appConfig.ELKHost == "" {
 		appConfig.ELKHost = "http://localhost:9200"
 	}
@@ -55,24 +78,28 @@ func initialize(project string) {
 	}
 }
 
-func ReadConfigYaml(projectName string) Config {
+func loadConfigFrom(location string) Config {
+	var config Config
+	var yamlFile []byte
+	var err error
 
-	yamlFile, err := os.ReadFile("config.yaml")
+	yamlFile, err = os.ReadFile(location)
 	if err != nil {
-		log.Fatalf("yamlFile.Get err   #%v ", err)
+		path, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("yamlFile.Get err   #%v ", err)
+		}
+
+		yamlFile, err = os.ReadFile(path + "\\config.yaml")
+		if err != nil {
+			log.Fatalf("yamlFile.Get err   #%v ", err)
+		}
 	}
 
-	var config Config
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
-
-	return updateConfig(config, projectName)
-}
-
-func updateConfig(config Config, projectName string) Config {
-	config.ProjectName = strings.Replace(config.ProjectName, "{project_name}", projectName, -1)
 	return config
 }
 
