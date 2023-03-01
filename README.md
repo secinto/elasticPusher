@@ -4,7 +4,6 @@
   
   <img src="https://img.shields.io/github/watchers/secinto/elasticPusher?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
   <img src="https://img.shields.io/github/stars/secinto/elasticPusher?style=for-the-badge" alt="GitHub Stars">
-  <img src="https://img.shields.io/github/downloadssecinto/elasticPusher/total?style=for-the-badge" alt="GitHub All Releases">
   <img src="https://img.shields.io/github/license/secinto/elasticPusher?style=for-the-badge" alt="GitHub License">
 </p>
 
