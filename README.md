@@ -1,5 +1,5 @@
 <h1 align="center">elasticPusher</h1>
-<h4 align="center">Advanced Logging for Burp Suite</h4>
+<h4 align="center">Client for pushing data to ELK</h4>
 <p align="center">
   
   <img src="https://img.shields.io/github/watchers/secinto/elasticPusher?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
