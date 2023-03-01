@@ -20,7 +20,7 @@ var (
 	esClient  *elasticsearch.Client
 )
 
-const VERSION = "0.15"
+const VERSION = "0.1"
 
 type Interaction struct {
 	Timestamp   time.Time `json:"timestamp"`
@@ -141,12 +141,6 @@ func main() {
 
 	initialize(project)
 
-	// 0.10 - First version
-	// 0.11 - Updates on adding index name dynamically and bug fixes
-	// 0.12 - Adding project name via parameters and storing via metadata (because max indices 500)
-	// 0.13 - Added types and configuration handling which seem to have a limit
-	// 0.14 - Adding handling of other files than JSON (project info not added here)
-	// 0.15 - Adding storing of responses which also allow to add the host where it was obtained as metadata
 	log.Info("Running elasticPusher v0.15")
 
 	if strings.ToLower(inputType) == "json" {
