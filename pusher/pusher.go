@@ -41,17 +41,22 @@ func NewPusher(options *Options) (*Pusher, error) {
 }
 
 func (p *Pusher) Push() error {
-	if strings.ToLower(p.options.Type) == "json" {
-		log.Infof("Pushing JSONL file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
-		SaveAnyJSONLToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Verbose)
-	} else if strings.ToLower(p.options.Type) == "raw" {
-		log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
-		SaveInteractionToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
+	if p.options.InputFile == "" {
+		if strings.ToLower(p.options.Type) == "json" {
+			log.Infof("Pushing JSONL file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
+			SaveAnyJSONLToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Verbose)
+		} else if strings.ToLower(p.options.Type) == "raw" {
+			log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
+			SaveInteractionToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
+		} else {
+			log.Infof("Pushing other file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
+			SaveAnyToElk(p.options.InputFile, p.options.Index, p.options.Project)
+		}
+		log.Infof("elasticPusher finished")
 	} else {
-		log.Infof("Pushing other file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
-		SaveAnyToElk(p.options.InputFile, p.options.Index, p.options.Project)
+		log.Infof("No input specified (piping currently not supported). Exiting program!")
 	}
-	log.Infof("elasticPusher finished")
+
 	return nil
 }
 
