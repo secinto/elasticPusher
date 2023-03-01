@@ -1,4 +1,4 @@
-module elasticPusher
+module github.com/secinto/elasticPusher
 
 go 1.20
 
