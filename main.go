@@ -7,6 +7,7 @@ import (
 	"elasticPusher/utils"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	"os"
 	"strings"
@@ -18,6 +19,8 @@ var (
 	appConfig types.Config
 	esClient  *elasticsearch.Client
 )
+
+const VERSION = "0.15"
 
 type Interaction struct {
 	Timestamp   time.Time `json:"timestamp"`
@@ -67,9 +70,9 @@ func SaveInteractionToElk(file string, indexName string, project string, host st
 	}
 
 	if jsonInteraction, err := json.Marshal(interaction); err == nil {
-		error := store.CreateFromData(jsonInteraction)
-		if error != nil {
-			log.Errorf("Pushing failed: %v", error)
+		err := store.CreateFromData(jsonInteraction)
+		if err != nil {
+			log.Errorf("Pushing failed: %v", err)
 		}
 	}
 
@@ -90,9 +93,9 @@ func SaveAnyToElk(file string, indexName string, project string) {
 	}
 
 	if jsonInteraction, err := json.Marshal(interaction); err == nil {
-		error := store.CreateFromData(jsonInteraction)
-		if error != nil {
-			log.Errorf("Pushing failed: %v", error)
+		err = store.CreateFromData(jsonInteraction)
+		if err != nil {
+			log.Errorf("Pushing failed: %v", err)
 		}
 	}
 
@@ -105,9 +108,9 @@ func SaveAnyJSONLToElk(file string, indexName string, project string, debugOutpu
 		log.Fatal("Error creating new ELK store: %v", err)
 	}
 	bytes, _ := os.ReadFile(file)
-	error := store.CreateBulkFromData(bytes)
-	if error != nil {
-		log.Errorf("Pushing failed: %v", error)
+	err = store.CreateBulkFromData(bytes)
+	if err != nil {
+		log.Errorf("Pushing failed: %v", err)
 	}
 }
 
@@ -119,14 +122,22 @@ func main() {
 	var hostName string
 	var inputType string
 	var debugOutput bool
+	var printHelp bool
 
 	flag.StringVar(&fileToPush, "f", "", "The name and location of the file which should be sent to ELK")
 	flag.StringVar(&project, "p", "general", "Specify what type of file format is sent (e.g.: JSON, XML, CSV,...)")
 	flag.StringVar(&indexName, "i", "", "Specify under what index name the types should be stored")
 	flag.StringVar(&hostName, "h", "", "Specify the host for which the data has been obtained")
 	flag.StringVar(&inputType, "t", "", "Specify what type of document should be sent (json, raw)")
-	flag.BoolVar(&debugOutput, "d", false, "Provides debug output of the operation")
+	flag.BoolVar(&debugOutput, "v", false, "Provides verbose output of the operation")
+	flag.BoolVar(&printHelp, "help", false, "Prints the usage information")
 	flag.Parse()
+
+	if printHelp {
+		fmt.Printf("elasticPusher %s\n\n", VERSION)
+		flag.Usage()
+		return
+	}
 
 	initialize(project)
 
@@ -142,7 +153,7 @@ func main() {
 		log.Infof("Storing file %s in index %s", fileToPush, indexName)
 		SaveAnyJSONLToElk(fileToPush, indexName, project, debugOutput)
 	} else if strings.ToLower(inputType) == "raw" {
-		log.Infof("Storing file\n %s in index %s\n for project %s from host %s", fileToPush, indexName, project, hostName)
+		log.Infof("Storing file %s in index %s for project %s from host %s", fileToPush, indexName, project, hostName)
 		SaveInteractionToElk(fileToPush, indexName, project, hostName)
 	} else {
 		log.Infof("Storing file %s in index %s", fileToPush, indexName)

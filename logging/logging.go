@@ -46,10 +46,9 @@ func NewLogger() *logger {
 	log.SetOutput(colorable.NewColorableStdout())
 
 	log.SetFormatter(&logrus.TextFormatter{
-		PadLevelText:    true,
-		ForceColors:     true,
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
+		PadLevelText:     true,
+		ForceColors:      true,
+		DisableTimestamp: true,
 	})
 
 	log.AddHook(rotateFileHook)
