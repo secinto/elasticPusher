@@ -28,6 +28,11 @@ cd elasticPusher
 go build
 go install
 ```
+or the following to directly install it from the command line:
+
+```sh
+go install -v github.com/secinto/elasticPusher/cmd/elasticPusher@latest
+
 
 # Usage
 
