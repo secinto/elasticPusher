@@ -4,3 +4,4 @@ cmd/webanalyze/webanalyze
 cmd/webanalyze/hosts.json
 dist/
 .idea
+logs/
