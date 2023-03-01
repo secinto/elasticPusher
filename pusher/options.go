@@ -32,7 +32,7 @@ func ParseOptions() *Options {
 	options := &Options{}
 	var err error
 	flagSet := goflags.NewFlagSet()
-	flagSet.SetDescription(`quickly discover exposed assets on the internet using multiple search engines.`)
+	flagSet.SetDescription(`push data to the ELK stack from command line`)
 
 	flagSet.CreateGroup("input", "Input",
 		flagSet.StringVarP(&options.InputFile, "file", "f", "", "input file containing data to be stored"),
@@ -61,7 +61,7 @@ func ParseOptions() *Options {
 	options.configureOutput()
 
 	if options.Version {
-		log.Infof("Current Version: %s\n", VERSION)
+		fmt.Printf("Current Version: %s\n", VERSION)
 		os.Exit(0)
 	}
 
