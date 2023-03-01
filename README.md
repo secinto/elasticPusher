@@ -20,7 +20,7 @@ Currently JSONL and RAW. RAW can currently be used for any file type which is no
 
 # Installation Instructions
 
-`elasticPusher` requires **go1.19** to install successfully. Run the following command to get the repo:
+`elasticPusher` requires **go1.20** to install successfully. Run the following command to get the repo:
 
 ```sh
 git clone https://github.com/secinto/elasticPusher.git
