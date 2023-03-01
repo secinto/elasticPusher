@@ -1,9 +1,8 @@
-package elastic
+package pusher
 
 import (
 	"bytes"
 	"context"
-	"elasticPusher/logging"
 	"encoding/json"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
@@ -13,7 +12,6 @@ import (
 )
 
 var (
-	log = logging.NewLogger()
 	buf bytes.Buffer
 )
 
