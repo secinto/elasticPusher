@@ -36,7 +36,7 @@ func ParseOptions() *Options {
 
 	flagSet.CreateGroup("input", "Input",
 		flagSet.StringVarP(&options.InputFile, "file", "f", "", "input file containing data to be stored"),
-		flagSet.StringVarP(&options.Index, "index", "i", "", "input file containing data to be stored"),
+		flagSet.StringVarP(&options.Index, "index", "i", "", "index under which the data should be stored"),
 		flagSet.StringVarP(&options.Type, "type", "t", "json", "input is in JSONL(ines) format"),
 		flagSet.StringVarP(&options.Project, "project", "p", "", "project name for metadata addition"),
 		flagSet.StringVarP(&options.Host, "host", "h", "", "host name for metadata addition"),

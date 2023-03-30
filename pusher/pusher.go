@@ -5,6 +5,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"gopkg.in/yaml.v3"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,11 +18,22 @@ var (
 
 const VERSION = "0.1"
 
+type HTTPXOutput struct {
+}
+
 type Interaction struct {
-	Timestamp   time.Time `json:"timestamp"`
-	ProjectName string    `json:"project"`
-	Hostname    string    `json:"host"`
-	Data        string    `json:"interaction"`
+	Timestamp             time.Time `json:"timestamp"`
+	ProjectName           string    `json:"project"`
+	HostName              string    `json:"host"`
+	URL                   string    `json:"url"`
+	Raw                   string    `json:"raw,omitempty"`
+	ResponseHTTPVersion   string    `json:"responseHTTPVersion,omitempty"`
+	ResponseStatusCode    string    `json:"responseStatusCode,omitempty"`
+	ResponseStatusMessage string    `json:"responseStatusMessage,omitempty"`
+	RequestHeader         string    `json:"requestHeader"`
+	RequestBody           string    `json:"requestBody,omitempty"`
+	ResponseHeader        string    `json:"responseHeader"`
+	ResponseBody          string    `json:"responseBody"`
 }
 
 type Config struct {
@@ -41,11 +53,11 @@ func NewPusher(options *Options) (*Pusher, error) {
 }
 
 func (p *Pusher) Push() error {
-	if p.options.InputFile == "" {
+	if p.options.InputFile != "" {
 		if strings.ToLower(p.options.Type) == "json" {
 			log.Infof("Pushing JSONL file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
 			SaveAnyJSONLToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Verbose)
-		} else if strings.ToLower(p.options.Type) == "raw" {
+		} else if strings.ToLower(p.options.Type) == "resp" {
 			log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
 			SaveInteractionToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
 		} else {
@@ -115,14 +127,13 @@ func SaveInteractionToElk(file string, indexName string, project string, host st
 		log.Fatal("Error creating new ELK store: %v", err)
 	}
 
-	bytes, _ := os.ReadFile(file)
-
 	interaction := Interaction{
 		Timestamp:   time.Now(),
 		ProjectName: project,
-		Hostname:    host,
-		Data:        string(bytes),
+		HostName:    host,
 	}
+
+	parseResponses(file, &interaction)
 
 	if jsonInteraction, err := json.Marshal(interaction); err == nil {
 		err := store.CreateFromData(jsonInteraction)
@@ -144,8 +155,10 @@ func SaveAnyToElk(file string, indexName string, project string) {
 	interaction := Interaction{
 		Timestamp:   time.Now(),
 		ProjectName: project,
-		Data:        string(bytes),
+		Raw:         string(bytes),
 	}
+
+	parseResponses(file, &interaction)
 
 	if jsonInteraction, err := json.Marshal(interaction); err == nil {
 		err = store.CreateFromData(jsonInteraction)
@@ -167,4 +180,96 @@ func SaveAnyJSONLToElk(file string, indexName string, project string, debugOutpu
 	if err != nil {
 		log.Errorf("Pushing failed: %v", err)
 	}
+}
+
+func parseResponses(fileName string, interaction *Interaction) {
+	file, err := os.ReadFile(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileLines := strings.Split(string(file), "\n")
+
+	var isResponse = false
+	var isBody = false
+	var newlineReceived = false
+	var header []string
+	var body []string
+	var responseBodyStartIndex int
+	var responseBodyEndIndex int
+	var responseHeaderStart bool = false
+
+	for index, line := range fileLines {
+		if strings.TrimSpace(line) != "" {
+			if index == 0 {
+				interaction.URL = strings.TrimSpace(line)
+				newlineReceived = false
+			} else if index >= 2 && !isResponse {
+				// Request header
+				header = append(header, line)
+				newlineReceived = false
+			} else if isResponse && !isBody {
+				// Response header
+				if responseHeaderStart {
+					responseHeaderStart = false
+					parts := strings.Split(line, " ")
+					if len(parts) >= 3 {
+						interaction.ResponseHTTPVersion = parts[0]
+						interaction.ResponseStatusCode = parts[1]
+						var message []string
+						if len(parts) > 3 {
+							for i := 2; i < len(parts); i++ {
+								message = append(message, parts[i])
+							}
+						} else {
+							message = append(message, parts[2])
+						}
+						interaction.ResponseStatusMessage = strings.Join(message, " ")
+					}
+
+				}
+				header = append(header, line)
+				newlineReceived = false
+			} else if isResponse && isBody {
+				// Response body
+				// Currently the amount of body characters, which is sometimes the first line after the newline is not
+				// evaluated and verified. If the first line is the length, then the last line is 0.
+				if responseBodyStartIndex == index {
+					_, err := strconv.ParseUint(line, 16, 64)
+					if err != nil {
+						body = append(body, line+"\n")
+					}
+				} else if responseBodyEndIndex == index {
+					_, err := strconv.ParseUint(line, 16, 64)
+					if err != nil {
+						body = append(body, line+"\n")
+					}
+				} else {
+					body = append(body, line+"\n")
+				}
+			}
+		} else {
+			if index > 3 && isResponse == false && !newlineReceived {
+				isResponse = true
+				isBody = false
+				interaction.RequestHeader = strings.Join(header, "\n")
+				header = nil
+				//Response header
+				newlineReceived = true
+				responseHeaderStart = true
+			} else if index > 3 && isResponse == true && !newlineReceived {
+				//Response body
+				isBody = true
+				body = nil
+				interaction.ResponseHeader = strings.Join(header, "\n")
+				newlineReceived = true
+				responseBodyStartIndex = index + 1
+				responseBodyEndIndex = len(fileLines) - 2
+			} else if isResponse && isBody {
+				body = append(body, line+"\n")
+			}
+		}
+	}
+
+	interaction.ResponseBody = strings.Join(body, "\n")
 }

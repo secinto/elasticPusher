@@ -15,8 +15,9 @@ Released under Apache License version 2.0 see LICENSE for more information
 Description
 ----
 elasticPusher is a GO client tool which pushes specified files to logstash. Different file types can be processed. 
-Currently JSONL and RAW. RAW can currently be used for any file type which is not JSON based. It is wrapped into an 
-"interaction" JSON container, mostly used for storing HTTP request/responses. 
+Currently JSONL and RESPONSE and RAW. RAW can currently be used for any file type which is not JSON based. It is wrapped into an 
+"interaction" JSON container. RESPONSE is used for the response output saved by HTTPX, this is parsed into a more useful 
+structure, for better readability.
 
 # Installation Instructions
 
@@ -46,10 +47,23 @@ This will display help for the tool. Here are all the switches it supports.
 
 ```console
 Usage:
-  ./elasticPusher [flags]
+  elasticPusher [flags]
 
 Flags:
-   -f,                   input file containing the data to be stored in elastic/logstash
-   -i                    the index under which the content should be stored
-   -p                    project name which will be added as additional information to the data
-   -h                    host name which will be added as additional information to the data
+INPUT:
+   -f, -file string     input file containing data to be stored
+   -i, -index string    index under which the data should be stored
+   -t, -type string     input is in JSONL(ines) or raw (HTTPX response output) format (default "json")
+   -p, -project string  project name for metadata addition
+   -h, -host string     host name for metadata addition
+
+CONFIG:
+   -config string  flag configuration file (default "$HOME/.config/elasticPusher/config.yaml")
+
+DEBUG:
+   -silent         show only results in output
+   -version        show version of the project
+   -v              show verbose output
+   -nc, -no-color  disable colors in output
+
+
