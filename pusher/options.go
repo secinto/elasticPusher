@@ -32,7 +32,7 @@ func ParseOptions() *Options {
 	options := &Options{}
 	var err error
 	flagSet := goflags.NewFlagSet()
-	flagSet.SetDescription(`push data to the ELK stack from command line`)
+	flagSet.SetDescription(fmt.Sprintf("elasticPusher %s - Push data to the ELK stack from command line", VERSION))
 
 	flagSet.CreateGroup("input", "Input",
 		flagSet.StringVarP(&options.InputFile, "file", "f", "", "input file containing data to be stored"),

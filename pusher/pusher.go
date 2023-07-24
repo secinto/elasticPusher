@@ -16,36 +16,6 @@ var (
 	esClient  *elasticsearch.Client
 )
 
-const VERSION = "0.1"
-
-type HTTPXOutput struct {
-}
-
-type Interaction struct {
-	Timestamp             time.Time `json:"timestamp"`
-	ProjectName           string    `json:"project"`
-	HostName              string    `json:"host"`
-	URL                   string    `json:"url"`
-	Raw                   string    `json:"raw,omitempty"`
-	ResponseHTTPVersion   string    `json:"responseHTTPVersion,omitempty"`
-	ResponseStatusCode    string    `json:"responseStatusCode,omitempty"`
-	ResponseStatusMessage string    `json:"responseStatusMessage,omitempty"`
-	RequestHeader         string    `json:"requestHeader"`
-	RequestBody           string    `json:"requestBody,omitempty"`
-	ResponseHeader        string    `json:"responseHeader"`
-	ResponseBody          string    `json:"responseBody"`
-}
-
-type Config struct {
-	ELKHost  string `yaml:"elk_host"`
-	Username string `yaml:"username,omitempty"`
-	Password string `yaml:"password,omitempty"`
-}
-
-type Pusher struct {
-	options *Options
-}
-
 func NewPusher(options *Options) (*Pusher, error) {
 	pusher := &Pusher{options: options}
 	initialize(options.ConfigFile)

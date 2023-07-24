@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 	"strings"
@@ -14,22 +13,6 @@ import (
 var (
 	buf bytes.Buffer
 )
-
-// StoreConfig configures the store.
-type StoreConfig struct {
-	Client      *elasticsearch.Client
-	IndexName   string
-	ProjectName string
-	DebugOutput bool
-}
-
-// Store allows to index and search documents.
-type Store struct {
-	es          *elasticsearch.Client
-	indexName   string
-	projectName string
-	debug       bool
-}
 
 // NewStore returns a new instance of the store.
 func NewStore(c StoreConfig) (*Store, error) {
