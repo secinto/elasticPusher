@@ -57,7 +57,7 @@ func (p *Pusher) Push() error {
 		if strings.ToLower(p.options.Type) == "json" {
 			log.Infof("Pushing JSONL file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
 			SaveAnyJSONLToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Verbose)
-		} else if strings.ToLower(p.options.Type) == "resp" {
+		} else if strings.ToLower(p.options.Type) == "raw" {
 			log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
 			SaveInteractionToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
 		} else {
