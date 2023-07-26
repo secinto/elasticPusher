@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	defaultConfigLocation = filepath.Join(folderutil.HomeDirOrDefault("."), ".config/elasticPusher/settings.yaml")
+	defaultConfigLocation = filepath.Join(folderutil.HomeDirOrDefault("."), ".config\\elasticPusher\\settings.yaml")
 )
 
 type Options struct {
