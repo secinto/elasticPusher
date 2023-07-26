@@ -43,7 +43,7 @@ func ParseOptions() *Options {
 	)
 
 	flagSet.CreateGroup("config", "Config",
-		flagSet.StringVar(&options.ConfigFile, "config", defaultConfigLocation, "flag configuration file"),
+		flagSet.StringVarP(&options.ConfigFile, "config", "c", defaultConfigLocation, "flag configuration file"),
 	)
 
 	flagSet.CreateGroup("debug", "Debug",

@@ -72,15 +72,7 @@ func loadConfigFrom(location string) Config {
 
 	yamlFile, err = os.ReadFile(location)
 	if err != nil {
-		path, err := os.Getwd()
-		if err != nil {
-			log.Fatalf("yamlFile.Get err   #%v ", err)
-		}
-
-		yamlFile, err = os.ReadFile(path + "\\config.yaml")
-		if err != nil {
-			log.Fatalf("yamlFile.Get err   #%v ", err)
-		}
+		log.Fatalf("yamlFile.Get err   #%v ", err)
 	}
 
 	err = yaml.Unmarshal(yamlFile, &config)
