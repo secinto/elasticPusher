@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const VERSION = "0.1.9"
+const VERSION = "0.1.10"
 
 type Interaction struct {
 	Timestamp             time.Time `json:"timestamp"`

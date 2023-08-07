@@ -5,3 +5,4 @@ cmd/webanalyze/hosts.json
 dist/
 .idea
 logs/
+elasticPusher
