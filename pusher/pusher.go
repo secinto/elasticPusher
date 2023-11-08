@@ -1,9 +1,11 @@
 package pusher
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"github.com/elastic/go-elasticsearch/v8"
 	"gopkg.in/yaml.v3"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -55,6 +57,8 @@ func initialize(configLocation string) {
 		Username: appConfig.Username,
 		Password: appConfig.Password,
 	}
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.Infof("Using %s as server", cfg.Addresses[0])
 
