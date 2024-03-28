@@ -14,19 +14,6 @@ var (
 	defaultConfigLocation = filepath.Join(folderutil.HomeDirOrDefault("."), ".config/elasticPusher/settings.yaml")
 )
 
-type Options struct {
-	ConfigFile string
-	InputFile  string
-	Project    string
-	Index      string
-	Host       string
-	Type       string
-	Silent     bool
-	Version    bool
-	NoColor    bool
-	Verbose    bool
-}
-
 // ParseOptions parses the command line flags provided by a user
 func ParseOptions() *Options {
 	options := &Options{}

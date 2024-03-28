@@ -13,57 +13,49 @@ import (
 )
 
 var (
-	log       = NewLogger()
-	appConfig Config
-	esClient  *elasticsearch.Client
+	log      = NewLogger()
+	esClient *elasticsearch.Client
 )
 
-func NewPusher(options *Options) (*Pusher, error) {
-	pusher := &Pusher{options: options}
-	initialize(options.ConfigFile)
-	return pusher, nil
-}
-
-func (p *Pusher) Push() error {
-	if p.options.InputFile != "" {
-		if strings.ToLower(p.options.Type) == "json" {
-			log.Infof("Pushing JSONL file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
-			SaveAnyJSONLToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Verbose)
-		} else if strings.ToLower(p.options.Type) == "raw" {
-			log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
-			SaveInteractionToElk(p.options.InputFile, p.options.Index, p.options.Project, p.options.Host)
-		} else {
-			log.Infof("Pushing other file %s to index %s for project %s", p.options.InputFile, p.options.Index, p.options.Project)
-			SaveAnyToElk(p.options.InputFile, p.options.Index, p.options.Project)
-		}
-		log.Infof("elasticPusher finished")
-	} else {
-		log.Infof("No input specified (piping currently not supported). Exiting program!")
-	}
-
-	return nil
-}
-
-func initialize(configLocation string) {
-	appConfig = loadConfigFrom(configLocation)
-	if appConfig.ELKHost == "" {
-		appConfig.ELKHost = "http://localhost:9200"
+func FromOptions(options *Options) (*Pusher, error) {
+	pusher := &Pusher{InputFile: options.InputFile, Index: options.Index, Project: options.Project, Type: options.Type, Host: options.Host}
+	config := loadConfigFrom(options.ConfigFile)
+	if config.ELKHost == "" {
+		config.ELKHost = "https://atlas:9200"
 	}
 
 	cfg := elasticsearch.Config{
 		Addresses: []string{
-			appConfig.ELKHost,
+			config.ELKHost,
 		},
-		Username: appConfig.Username,
-		Password: appConfig.Password,
 	}
+
+	if config.APIKey != "" {
+		cfg.Username = config.Username
+		cfg.Password = config.Password
+	} else {
+		cfg.APIKey = config.APIKey
+	}
+
+	initialize(cfg)
+
+	return pusher, nil
+}
+
+func FromConfig(config elasticsearch.Config, index string, project string, pushType string, host string) (*Pusher, error) {
+	pusher := &Pusher{Index: index, Project: project, Type: pushType, Host: host}
+	initialize(config)
+	return pusher, nil
+}
+
+func initialize(config elasticsearch.Config) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	log.Infof("Using %s as server", cfg.Addresses[0])
+	log.Infof("Using %s as server", config.Addresses[0])
 
 	var err error
-	esClient, err = elasticsearch.NewClient(cfg)
+	esClient, err = elasticsearch.NewClient(config)
 	if err != nil {
 		log.Fatal("Error creating Elasticsearch client: %v", err)
 	}
@@ -84,6 +76,31 @@ func loadConfigFrom(location string) Config {
 		log.Fatalf("Unmarshal: %v", err)
 	}
 	return config
+}
+
+func (p *Pusher) PushFile() error {
+	if p.InputFile != "" {
+		if strings.ToLower(p.Type) == "json" {
+			log.Infof("Pushing JSONL file %s to index %s for project %s", p.InputFile, p.Index, p.Project)
+			SaveAnyJSONLToElk(p.InputFile, p.Index, p.Project)
+		} else if strings.ToLower(p.Type) == "raw" {
+			log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.InputFile, p.Index, p.Project, p.Host)
+			SaveInteractionToElk(p.InputFile, p.Index, p.Project, p.Host)
+		} else {
+			log.Infof("Pushing other file %s to index %s for project %s", p.InputFile, p.Index, p.Project)
+			SaveAnyToElk(p.InputFile, p.Index, p.Project)
+		}
+		log.Infof("elasticPusher finished")
+	} else {
+		log.Infof("No input specified (piping currently not supported). Exiting program!")
+	}
+
+	return nil
+}
+
+func (p *Pusher) PushString(line string) error {
+	sendLogToELK(line, p.Index, p.Project)
+	return nil
 }
 
 func SaveInteractionToElk(file string, indexName string, project string, host string) {
@@ -135,14 +152,27 @@ func SaveAnyToElk(file string, indexName string, project string) {
 
 }
 
-func SaveAnyJSONLToElk(file string, indexName string, project string, debugOutput bool) {
-	storeConfig := StoreConfig{Client: esClient, IndexName: indexName, ProjectName: project, DebugOutput: debugOutput}
+func SaveAnyJSONLToElk(file string, indexName string, project string) {
+	storeConfig := StoreConfig{Client: esClient, IndexName: indexName, ProjectName: project}
 	store, err := NewStore(storeConfig)
 	if err != nil {
 		log.Fatal("Error creating new ELK store: %v", err)
 	}
 	bytes, _ := os.ReadFile(file)
 	err = store.CreateBulkFromData(bytes)
+	if err != nil {
+		log.Errorf("Pushing failed: %v", err)
+	}
+}
+
+func sendLogToELK(logEntry any, indexName string, project string) {
+	storeConfig := StoreConfig{Client: esClient, IndexName: indexName, ProjectName: project}
+	store, err := NewStore(storeConfig)
+	if err != nil {
+		log.Fatal("Error creating new ELK store: %v", err)
+	}
+
+	err = store.CreateFromObject(logEntry)
 	if err != nil {
 		log.Errorf("Pushing failed: %v", err)
 	}

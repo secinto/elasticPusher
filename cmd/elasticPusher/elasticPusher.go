@@ -9,12 +9,12 @@ func main() {
 	// Parse the command line flags and read config files
 	options := pusher.ParseOptions()
 
-	newPusher, err := pusher.NewPusher(options)
+	newPusher, err := pusher.FromOptions(options)
 	if err != nil {
 		gologger.Fatal().Msgf("Could not create pusher: %s\n", err)
 	}
 
-	err = newPusher.Push()
+	err = newPusher.PushFile()
 	if err != nil {
 		gologger.Fatal().Msgf("Could not push: %s\n", err)
 	}
