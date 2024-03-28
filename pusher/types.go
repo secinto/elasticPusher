@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const VERSION = "0.3.0"
+const VERSION = "0.3.1"
 
 type Interaction struct {
 	Timestamp             time.Time `json:"timestamp"`
@@ -63,7 +63,6 @@ type Store struct {
 	es          *elasticsearch.Client
 	indexName   string
 	projectName string
-	debug       bool
 }
 
 // Hook is a hook that writes logs of specified LogLevels to specified Writer

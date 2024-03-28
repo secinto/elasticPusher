@@ -18,13 +18,12 @@ var (
 func NewStore(c StoreConfig) (*Store, error) {
 	indexName := c.IndexName
 	projectName := c.ProjectName
-	debug := c.DebugOutput
 
 	if indexName == "" {
 		indexName = ""
 	}
 
-	s := Store{es: c.Client, indexName: indexName, projectName: projectName, debug: debug}
+	s := Store{es: c.Client, indexName: indexName, projectName: projectName}
 	return &s, nil
 }
 
@@ -80,7 +79,7 @@ func (s *Store) CreateFromData(payload []byte) error {
 // CreateBulkFromData takes a byte array and creates a BulkRequest from it
 // and stores it at the defined index.
 func (s *Store) CreateBulkFromData(payload []byte) error {
-	createMetaDataForBulkData(payload, s.indexName, s.projectName, s.debug)
+	createMetaDataForBulkData(payload, s.indexName, s.projectName)
 	res, err := s.es.Bulk(bytes.NewReader(buf.Bytes()), s.es.Bulk.WithIndex(s.indexName))
 	if err != nil {
 		return err
@@ -99,7 +98,7 @@ func (s *Store) CreateBulkFromData(payload []byte) error {
 	return nil
 }
 
-func createMetaDataForBulkData(payload []byte, indexName string, projectName string, debugOutput bool) {
+func createMetaDataForBulkData(payload []byte, indexName string, projectName string) {
 	// Prepare the metadata payload
 	meta := []byte(fmt.Sprintf(`{ "index" : { "_index" : "%s" } }%s`, indexName, "\n"))
 	// Each line of JSON requires the metadata as trailer to be accepted by elastic. Thus, we read each line
@@ -109,9 +108,6 @@ func createMetaDataForBulkData(payload []byte, indexName string, projectName str
 		line = strings.TrimSuffix(line, "}")
 		line = line + ",\"project\":\"" + projectName + "\"}"
 		linePayload := []byte(line + "\n")
-		if debugOutput {
-			log.Debugf("Adding line %s", linePayload)
-		}
 		//Grow the buffer accordingly
 		buf.Grow(len(linePayload) + len(meta))
 		// Write types to buffer
