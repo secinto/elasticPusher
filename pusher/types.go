@@ -23,6 +23,14 @@ type Interaction struct {
 	ResponseBody          string    `json:"responseBody"`
 }
 
+type LogEntry struct {
+	Timestamp   time.Time `json:"timestamp"`
+	ProjectName string    `json:"project"`
+	HostName    string    `json:"host"`
+	Entry       string    `json:"entry"`
+	Level       string    `json:"level"`
+}
+
 type Options struct {
 	ConfigFile string
 	InputFile  string
@@ -68,5 +76,6 @@ type Store struct {
 // Hook is a hook that writes logs of specified LogLevels to specified Writer
 type Hook struct {
 	Pusher    *Pusher
-	LogLevels []logrus.Level
+	Formatter logrus.Formatter
+	LogLevel  logrus.Level
 }

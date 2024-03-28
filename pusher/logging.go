@@ -9,19 +9,6 @@ import (
 
 type logger struct{ *logrus.Logger }
 
-func (l *logger) Say(msg string) {
-	l.Info(msg)
-}
-func (l *logger) Sayf(fmt string, args ...interface{}) {
-	l.Infof(fmt, args)
-}
-func (l *logger) SayWithField(msg string, k string, v interface{}) {
-	l.WithField(k, v).Info(msg)
-}
-func (l *logger) SayWithFields(msg string, fields map[string]interface{}) {
-	l.WithFields(fields).Info(msg)
-}
-
 func NewLogger() *logger {
 
 	logLevel := logrus.DebugLevel
@@ -46,9 +33,10 @@ func NewLogger() *logger {
 	log.SetOutput(colorable.NewColorableStdout())
 
 	log.SetFormatter(&logrus.TextFormatter{
-		PadLevelText:     true,
-		ForceColors:      true,
-		DisableTimestamp: true,
+		PadLevelText:    true,
+		ForceColors:     true,
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05",
 	})
 
 	log.AddHook(rotateFileHook)

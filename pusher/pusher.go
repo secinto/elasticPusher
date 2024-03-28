@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
@@ -20,9 +21,6 @@ var (
 func FromOptions(options *Options) (*Pusher, error) {
 	pusher := &Pusher{InputFile: options.InputFile, Index: options.Index, Project: options.Project, Type: options.Type, Host: options.Host}
 	config := loadConfigFrom(options.ConfigFile)
-	if config.ELKHost == "" {
-		config.ELKHost = "https://atlas:9200"
-	}
 
 	cfg := elasticsearch.Config{
 		Addresses: []string{
@@ -42,9 +40,10 @@ func FromOptions(options *Options) (*Pusher, error) {
 	return pusher, nil
 }
 
-func FromConfig(config elasticsearch.Config, index string, project string, pushType string, host string) (*Pusher, error) {
-	pusher := &Pusher{Index: index, Project: project, Type: pushType, Host: host}
+func FromConfig(config elasticsearch.Config, index string, host string) (*Pusher, error) {
+	pusher := &Pusher{Index: index, Host: host, Project: "logging"}
 	initialize(config)
+	log.SetLevel(logrus.ErrorLevel)
 	return pusher, nil
 }
 
@@ -52,12 +51,12 @@ func initialize(config elasticsearch.Config) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	log.Infof("Using %s as server", config.Addresses[0])
+	log.Infof("Using %s as elasticsearch server", config.Addresses[0])
 
 	var err error
 	esClient, err = elasticsearch.NewClient(config)
 	if err != nil {
-		log.Fatal("Error creating Elasticsearch client: %v", err)
+		log.Fatalf("Error creating Elasticsearch client: %v", err)
 	}
 }
 
@@ -68,7 +67,7 @@ func loadConfigFrom(location string) Config {
 
 	yamlFile, err = os.ReadFile(location)
 	if err != nil {
-		log.Fatalf("yamlFile.Get err   #%v ", err)
+		log.Fatalf("Could read yaml config file: %v ", err)
 	}
 
 	err = yaml.Unmarshal(yamlFile, &config)
@@ -81,7 +80,7 @@ func loadConfigFrom(location string) Config {
 func (p *Pusher) PushFile() error {
 	if p.InputFile != "" {
 		if strings.ToLower(p.Type) == "json" {
-			log.Infof("Pushing JSONL file %s to index %s for project %s", p.InputFile, p.Index, p.Project)
+			log.Infof("Pushing JSON file %s to index %s for project %s", p.InputFile, p.Index, p.Project)
 			SaveAnyJSONLToElk(p.InputFile, p.Index, p.Project)
 		} else if strings.ToLower(p.Type) == "raw" {
 			log.Infof("Pushing RAW file %s to index %s for project %s and host %s", p.InputFile, p.Index, p.Project, p.Host)
@@ -98,8 +97,8 @@ func (p *Pusher) PushFile() error {
 	return nil
 }
 
-func (p *Pusher) PushString(line string) error {
-	sendLogToELK(line, p.Index, p.Project)
+func (p *Pusher) PushLog(json string, level string) error {
+	sendLogToELK(json, p.Index, level, p.Host, p.Project)
 	return nil
 }
 
@@ -165,16 +164,26 @@ func SaveAnyJSONLToElk(file string, indexName string, project string) {
 	}
 }
 
-func sendLogToELK(logEntry any, indexName string, project string) {
-	storeConfig := StoreConfig{Client: esClient, IndexName: indexName, ProjectName: project}
-	store, err := NewStore(storeConfig)
+func sendLogToELK(logEntry string, indexName string, level string, host string, project string) {
+	config := StoreConfig{Client: esClient, IndexName: indexName}
+	store, err := NewStore(config)
 	if err != nil {
 		log.Fatal("Error creating new ELK store: %v", err)
 	}
 
-	err = store.CreateFromObject(logEntry)
-	if err != nil {
-		log.Errorf("Pushing failed: %v", err)
+	entry := LogEntry{
+		Timestamp:   time.Now(),
+		ProjectName: project,
+		HostName:    host,
+		Entry:       logEntry,
+		Level:       level,
+	}
+
+	if jsonEntry, err := json.Marshal(entry); err == nil {
+		err := store.CreateFromData(jsonEntry)
+		if err != nil {
+			log.Errorf("Pushing failed: %v", err)
+		}
 	}
 }
 
