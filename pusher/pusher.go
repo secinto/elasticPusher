@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
@@ -43,7 +42,6 @@ func FromOptions(options *Options) (*Pusher, error) {
 func FromConfig(config elasticsearch.Config, index string, host string) (*Pusher, error) {
 	pusher := &Pusher{Index: index, Host: host, Project: "logging"}
 	initialize(config)
-	log.SetLevel(logrus.ErrorLevel)
 	return pusher, nil
 }
 
