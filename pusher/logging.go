@@ -11,7 +11,7 @@ type logger struct{ *logrus.Logger }
 
 func NewLogger() *logger {
 
-	logLevel := logrus.DebugLevel
+	logLevel := logrus.InfoLevel
 	log := logrus.New()
 	log.SetLevel(logLevel)
 

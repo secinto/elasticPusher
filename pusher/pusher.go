@@ -39,11 +39,17 @@ func FromOptions(options *Options) (*Pusher, error) {
 	return pusher, nil
 }
 
+func FromConfig(config elasticsearch.Config, index string, host string) (*Pusher, error) {
+	pusher := &Pusher{Index: index, Host: host, Project: "logging"}
+	initialize(config)
+	return pusher, nil
+}
+
 func initialize(config elasticsearch.Config) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	log.Infof("Using %s as elasticsearch server", config.Addresses[0])
+	log.Debugf("Using %s as elasticsearch server", config.Addresses[0])
 
 	var err error
 	esClient, err = elasticsearch.NewClient(config)
