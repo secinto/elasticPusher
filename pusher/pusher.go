@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,8 @@ import (
 var (
 	log      = NewLogger()
 	esClient *elasticsearch.Client
+	config   StoreConfig
+	store    *Store
 )
 
 func FromOptions(options *Options) (*Pusher, error) {
@@ -49,7 +52,7 @@ func initialize(config elasticsearch.Config) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	log.Infof("Using %s as elasticsearch server", config.Addresses[0])
+	log.Debugf("Using %s as elasticsearch server", config.Addresses[0])
 
 	var err error
 	esClient, err = elasticsearch.NewClient(config)
@@ -163,10 +166,15 @@ func SaveAnyJSONLToElk(file string, indexName string, project string) {
 }
 
 func sendLogToELK(logEntry string, indexName string, level string, host string, project string) {
-	config := StoreConfig{Client: esClient, IndexName: indexName}
-	store, err := NewStore(config)
-	if err != nil {
-		log.Fatal("Error creating new ELK store: %v", err)
+	if config == (StoreConfig{}) {
+		config = StoreConfig{Client: esClient, IndexName: indexName}
+		if store == nil || reflect.DeepEqual(store, Store{}) {
+			var err error
+			store, err = NewStore(config)
+			if err != nil {
+				log.Fatal("Error creating new ELK store: %v", err)
+			}
+		}
 	}
 
 	entry := LogEntry{

@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-type logger struct{ *logrus.Logger }
+type Logger struct{ *logrus.Logger }
 
-func NewLogger() *logger {
+func NewLogger() *Logger {
 
-	logLevel := logrus.DebugLevel
+	logLevel := logrus.InfoLevel
 	log := logrus.New()
 	log.SetLevel(logLevel)
 
@@ -41,5 +41,5 @@ func NewLogger() *logger {
 
 	log.AddHook(rotateFileHook)
 
-	return &logger{log}
+	return &Logger{log}
 }
