@@ -1,4 +1,0 @@
----
-elk_host: "http://localhost:9200"
-username: "user"
-password: "pass"
