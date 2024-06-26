@@ -27,7 +27,7 @@ func FromOptions(options *Options) (*Pusher, error) {
 		},
 	}
 
-	if config.APIKey != "" {
+	if config.APIKey == "" {
 		cfg.Username = config.Username
 		cfg.Password = config.Password
 	} else {
